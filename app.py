@@ -2,45 +2,10 @@ from flask import Flask, jsonify, request
 import requests
 from bs4 import BeautifulSoup
 import re
-import concurrent.futures
-from constant import HEADER
+import helpers
 
 
 app = Flask(__name__)
-
-
-def getDomainUrls(url="") -> list[str]:
-    urls: list = []
-    if url:
-
-        domainName = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
-        data = requests.get(url, HEADER)
-        soup = BeautifulSoup(data.text, 'html.parser')
-        
-        for link in soup.find_all('a'):
-            href = link.get('href')
-            if href and domainName in href:
-                urls.append(href)
-
-    return urls 
-
-
-def getStatus(url) -> int:
-
-    response = requests.get(url, HEADER)
-    return response.status_code
-
-
-def checkStatus(urls) -> list:
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures: list = []
-        statusList: list = []
-        for url in urls:
-            futures.append(executor.submit(getStatus, url=url))
-
-        for future in concurrent.futures.as_completed(futures):
-            statusList.append(future.result())
-    return statusList
 
 
 @app.route("/one", methods=['POST'])
@@ -68,10 +33,10 @@ def one():
 def two():
 
     url: str = request.args.get('url')
-    domainUrls: list = getDomainUrls(url)
+    domainUrls: list = helpers.getDomainUrls(url)
     urlsCount: int = len(domainUrls)
 
-    domainUrlStatus: list = checkStatus(domainUrls)
+    domainUrlStatus: list = helpers.checkStatus(domainUrls)
     activeUrl: int = len([i for i in domainUrlStatus if i==200])
 
     res: dict[str: int] = {domainUrls[i]: domainUrlStatus[i] for i in range(len(domainUrlStatus))}
