@@ -1,18 +1,25 @@
 import requests
 from bs4 import BeautifulSoup
-
-headers = {
-  "User-Agent": "Mozilla/5.0 (Linux; Android 10; HD1913) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.105 Mobile Safari/537.36 EdgA/46.1.2.5140"
-}
-
-url = "https://cyberchimps.com/"
-# domainName = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
-data = requests.get(url, headers=headers)
-soup = BeautifulSoup(data.text, 'html.parser')
-urls = []
-for link in soup.find_all('a'):
-    urls.append(link.get('href'))
-    print(link.get('href'))
+import re
 
 
-page_count = len(urls)
+def getDomainUrls(url=""):
+  urls = []
+  if url:
+    header = {
+      "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
+    }
+
+    domainName = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
+    print(domainName)
+    data = requests.get(url, headers=header)
+    soup = BeautifulSoup(data.text, 'html.parser')
+    
+    for link in soup.find_all('a'):
+        href = link.get('href')
+        if href and domainName in href:
+          urls.append(href)
+
+  return urls
+
+print(getDomainUrls())

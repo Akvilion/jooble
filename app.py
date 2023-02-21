@@ -2,26 +2,59 @@ from flask import Flask, jsonify, request
 import requests
 from bs4 import BeautifulSoup
 import re
-from selenium import webdriver
-from lxml import etree
-import io
+import concurrent.futures
+from constant import HEADER
 
 
 app = Flask(__name__)
 
 
+def getDomainUrls(url="") -> list[str]:
+    urls: list = []
+    if url:
+
+        domainName = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
+        data = requests.get(url, HEADER)
+        soup = BeautifulSoup(data.text, 'html.parser')
+        
+        for link in soup.find_all('a'):
+            href = link.get('href')
+            if href and domainName in href:
+                urls.append(href)
+
+    return urls 
+
+
+def getStatus(url) -> int:
+
+    response = requests.get(url, HEADER)
+    return response.status_code
+
+
+def checkStatus(urls) -> list:
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures: list = []
+        statusList: list = []
+        for url in urls:
+            futures.append(executor.submit(getStatus, url=url))
+
+        for future in concurrent.futures.as_completed(futures):
+            statusList.append(future.result())
+    return statusList
+
 
 @app.route("/one", methods=['POST'])
 def one():
 
-    url = request.args.get('url')
+    url: str = request.args.get('url')
     response = requests.get(url)
-    statusCode = response.status_code   
-    soup = BeautifulSoup(response.text, 'html.parser')
-    title = soup.find('title').get_text()
-    domainName = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
+    statusCode: int = response.status_code   
+    soup: BeautifulSoup = BeautifulSoup(response.text, 'html.parser')
+    title: str = soup.find('title').get_text()
+    domainName: str = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
 
-    finalUrl = response.url if response.url != url else ""
+    finalUrl: str = response.url if response.url != url else ""
+    
     return jsonify({
         "final_url": finalUrl,
         "status_code": statusCode,
@@ -34,27 +67,20 @@ def one():
 @app.route("/two", methods=['POST'])
 def two():
 
-    url = request.args.get('url')
-    domainName = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
-    data = requests.get(url)
-    soup = BeautifulSoup(data.text, 'html.parser')
-    urls = []
-    for link in soup.find_all('a'):
-        urls.append(link.get('href'))
-        print(link.get('href'))
+    url: str = request.args.get('url')
+    domainUrls: list = getDomainUrls(url)
+    urlsCount: int = len(domainUrls)
 
+    domainUrlStatus: list = checkStatus(domainUrls)
+    activeUrl: int = len([i for i in domainUrlStatus if i==200])
 
-    page_count = len(urls)
-
+    res: dict[str: int] = {domainUrls[i]: domainUrlStatus[i] for i in range(len(domainUrlStatus))}
+    urlsWithOkStatus: list[str] = [key for key, val in res.items() if val == 200]
 
     return jsonify({
-        "active_page_count": 3,
-        "page_count": page_count,
-        "url_list": [
-            "https://cyberchimps.com/blog/top-wordpress-photography-themes/",
-            "https://cyberchimps.com/blog/best-wordpress-themes-for-artists/",
-            "https://cyberchimps.com/blog/"
-        ]
+        "active_page_count": activeUrl,
+        "page_count": urlsCount,
+        "url_list": urlsWithOkStatus
     })
 
 

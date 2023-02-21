@@ -1,33 +1,33 @@
-# import requests
-# import concurrent.futures
+import requests
+import concurrent.futures
 
-# def get_status(url):
+def get_status(url):
 
-#     resp = requests.get(url=url)
-#     return resp.status_code
+    resp = requests.get(url=url)
+    return resp.status_code
 
-# urls = ['http://webcode.me', 'https://httpbin.org/get',
-#     'https://google.com', 'https://stackoverflow.com',
-#     'https://github.com', 'https://clojure.org',
-#     'https://fsharp.org']
+urls = ['http://webcode.me', 'https://httpbin.org/get',
+    'https://google.com', 'https://stackoverflow.com',
+    'https://github.com', 'https://clojure.org',
+    'https://fsharp.org']
 
 
-# def checkStatus(urls):
-#     with concurrent.futures.ThreadPoolExecutor() as executor:
+def checkStatus(urls):
+    with concurrent.futures.ThreadPoolExecutor() as executor:
 
-#         futures = []
-#         statusList = []
-#         for url in urls:
-#             futures.append(executor.submit(get_status, url=url))
+        futures = []
+        statusList = []
+        for url in urls:
+            futures.append(executor.submit(get_status, url=url))
 
-#         for future in concurrent.futures.as_completed(futures):
-#             statusList.append(future.result())
-#     return statusList
+        for future in concurrent.futures.as_completed(futures):
+            statusList.append(future.result())
+    return statusList
 
-# status = checkStatus(urls)
-# res = {urls[i]: status[i] for i in range(len(status))}
+status = checkStatus(urls)
+res = {urls[i]: status[i] for i in range(len(status))}
 
-# print(res)
+
 
 
 
