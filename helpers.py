@@ -5,12 +5,12 @@ from constant import HEADER
 import re
 
 
-def getDomainUrls(url="") -> list[str]:
+def getDomainUrls(url: str="") -> list[str]:
     urls: list = []
     if url:
 
         domainName = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
-        data = requests.get(url, HEADER)
+        data = requests.get(url, headers=HEADER)
         soup = BeautifulSoup(data.text, 'html.parser')
         
         for link in soup.find_all('a'):
@@ -21,13 +21,15 @@ def getDomainUrls(url="") -> list[str]:
     return urls 
 
 
-def getStatus(url) -> int:
+def getStatus(url: str="") -> int:
 
-    response = requests.get(url, HEADER)
+    if url == "mailto:admin@drpriyanka.com":
+        a = 2
+    response = requests.get(url, headers=HEADER)
     return response.status_code
 
 
-def checkStatus(urls) -> list:
+def checkStatus(urls: list[str]=[]) -> list:
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures: list = []
         statusList: list = []
@@ -37,3 +39,10 @@ def checkStatus(urls) -> list:
         for future in concurrent.futures.as_completed(futures):
             statusList.append(future.result())
     return statusList
+
+
+def urlCleaner(urls: list) -> list:
+    nonDuplicateUrls: list = list(set(urls))  # delete duplicates
+    emailValidatePattern = r"^\S+@\S+\.\S+$"
+    cleanedUrls  = [i for i in nonDuplicateUrls if not re.match(emailValidatePattern, i)]  # delete email
+    return cleanedUrls

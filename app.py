@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import helpers
+from constant import HEADER
 
 
 app = Flask(__name__)
@@ -12,7 +13,8 @@ app = Flask(__name__)
 def one():
 
     url: str = request.args.get('url')
-    response = requests.get(url)
+
+    response = requests.get(url, headers=HEADER)
     statusCode: int = response.status_code   
     soup: BeautifulSoup = BeautifulSoup(response.text, 'html.parser')
     title: str = soup.find('title').get_text()
@@ -34,18 +36,22 @@ def two():
 
     url: str = request.args.get('url')
     domainUrls: list = helpers.getDomainUrls(url)
-    urlsCount: int = len(domainUrls)
+    
+    cleanUrls: list[str] = helpers.urlCleaner(domainUrls)
 
-    domainUrlStatus: list = helpers.checkStatus(domainUrls)
+    urlsCount: int = len(cleanUrls)
+
+    domainUrlStatus: list = helpers.checkStatus(cleanUrls)
     activeUrl: int = len([i for i in domainUrlStatus if i==200])
 
-    res: dict[str: int] = {domainUrls[i]: domainUrlStatus[i] for i in range(len(domainUrlStatus))}
+    res: dict[str: int] = {cleanUrls[i]: domainUrlStatus[i] for i in range(len(domainUrlStatus))}
     urlsWithOkStatus: list[str] = [key for key, val in res.items() if val == 200]
 
     return jsonify({
         "active_page_count": activeUrl,
         "page_count": urlsCount,
-        "url_list": urlsWithOkStatus
+        "url_list": urlsWithOkStatus,
+        "x": len(urlsWithOkStatus)
     })
 
 
