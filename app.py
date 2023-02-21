@@ -50,8 +50,7 @@ def two():
     return jsonify({
         "active_page_count": activeUrl,
         "page_count": urlsCount,
-        "url_list": urlsWithOkStatus,
-        "x": len(urlsWithOkStatus)
+        "url_list": urlsWithOkStatus
     })
 
 
